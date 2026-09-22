@@ -1208,22 +1208,27 @@ class Arrow:
 
                 elif diff < self._SECS_PER_WEEK * 2:
                     return locale.describe("week", sign, only_distance=only_distance)
-                elif diff < self._SECS_PER_MONTH:
-                    weeks = sign * max(delta_second // self._SECS_PER_WEEK, 2)
-                    return locale.describe("weeks", weeks, only_distance=only_distance)
-
-                elif diff < self._SECS_PER_MONTH * 2:
-                    return locale.describe("month", sign, only_distance=only_distance)
                 elif diff < self._SECS_PER_YEAR:
-                    # TODO revisit for humanization during leap years
-                    self_months = self._datetime.year * 12 + self._datetime.month
-                    other_months = dt.year * 12 + dt.month
+                    if self._datetime > dt:
+                        completed_months = relativedelta(self._datetime, dt).months
+                    else:
+                        completed_months = relativedelta(dt, self._datetime).months
 
-                    months = sign * max(abs(other_months - self_months), 2)
-
-                    return locale.describe(
-                        "months", months, only_distance=only_distance
-                    )
+                    if completed_months == 1:
+                        return locale.describe(
+                            "month", sign, only_distance=only_distance
+                        )
+                    elif completed_months >= 2:
+                        return locale.describe(
+                            "months",
+                            sign * completed_months,
+                            only_distance=only_distance,
+                        )
+                    else:
+                        weeks = sign * max(delta_second // self._SECS_PER_WEEK, 2)
+                        return locale.describe(
+                            "weeks", weeks, only_distance=only_distance
+                        )
 
                 elif diff < self._SECS_PER_YEAR * 2:
                     return locale.describe("year", sign, only_distance=only_distance)
