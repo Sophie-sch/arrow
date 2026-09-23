@@ -1213,7 +1213,7 @@ class Arrow:
                     delta = relativedelta(self._datetime, dt)
                     month_diff = delta.years * 12 + delta.months
                     week_diff = delta.days // 7
-                    if month_diff >= 1:
+                    if abs(month_diff) >= 1:
                         return locale.describe("month", sign, only_distance=only_distance)
                     weeks = sign * max(week_diff, 2)
                     return locale.describe("weeks", weeks, only_distance=only_distance)
