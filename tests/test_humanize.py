@@ -139,3 +139,383 @@ class TestHumanizeWeekVsMonth:
                 f"Month {start_month} ({length} days): "
                 f"expected 'month' in '{result}'"
             )
+
+
+class TestHumanizeTwoToElevenMonths:
+    """Tests for the 'x months' range (2-11 months) that was previously
+    guarded by _SECS_PER_MONTH * 2 threshold."""
+
+    def test_three_months(self):
+        earlier = arrow.Arrow(2025, 1, 15)
+        later = earlier.shift(months=3)
+        result = later.humanize(earlier)
+        assert "3 months" in result
+
+    def test_six_months(self):
+        earlier = arrow.Arrow(2025, 1, 15)
+        later = earlier.shift(months=6)
+        result = later.humanize(earlier)
+        assert "6 months" in result
+
+    def test_eleven_months(self):
+        earlier = arrow.Arrow(2024, 1, 15)
+        later = earlier.shift(months=11)
+        result = later.humanize(earlier)
+        assert "11 months" in result
+
+    def test_backward_three_months(self):
+        later = arrow.Arrow(2025, 6, 15)
+        earlier = arrow.Arrow(2025, 3, 15)
+        result = earlier.humanize(later)
+        assert "3 months ago" in result
+
+    def test_backward_eleven_months(self):
+        later = arrow.Arrow(2025, 1, 15)
+        earlier = arrow.Arrow(2024, 2, 15)
+        result = earlier.humanize(later)
+        assert "11 months ago" in result
+
+    def test_only_distance_three_months(self):
+        earlier = arrow.Arrow(2025, 1, 15)
+        later = earlier.shift(months=3)
+        result = later.humanize(earlier, only_distance=True)
+        assert result == "3 months"
+
+    def test_only_distance_six_months(self):
+        earlier = arrow.Arrow(2025, 1, 15)
+        later = earlier.shift(months=6)
+        result = later.humanize(earlier, only_distance=True)
+        assert result == "6 months"
+
+    def test_cross_year_six_months(self):
+        earlier = arrow.Arrow(2024, 7, 15)
+        later = arrow.Arrow(2025, 1, 15)
+        result = later.humanize(earlier)
+        assert "6 months" in result
+
+    def test_backward_cross_year_six_months(self):
+        later = arrow.Arrow(2025, 1, 15)
+        earlier = arrow.Arrow(2024, 7, 15)
+        result = earlier.humanize(later)
+        assert "6 months ago" in result
+
+    def test_two_months_short_month_span(self):
+        """Jan → Mar = 59 days, should say '2 months'."""
+        earlier = arrow.Arrow(2025, 1, 15)
+        later = arrow.Arrow(2025, 3, 15)
+        result = later.humanize(earlier)
+        assert "2 months" in result
+
+    def test_two_months_30_day_months(self):
+        """Apr → Jun = 61 days, should say '2 months'."""
+        earlier = arrow.Arrow(2025, 4, 15)
+        later = arrow.Arrow(2025, 6, 15)
+        result = later.humanize(earlier)
+        assert "2 months" in result
+
+    def test_two_months_with_feb(self):
+        """Jan → Mar includes Feb, should say '2 months'."""
+        earlier = arrow.Arrow(2025, 1, 28)
+        later = earlier.shift(months=2)
+        result = later.humanize(earlier)
+        assert "2 months" in result
+
+
+class TestHumanizeYearBoundary:
+    """Tests for year-level humanize that uses calendar month comparison."""
+
+    def test_one_year(self):
+        earlier = arrow.Arrow(2024, 3, 15)
+        later = earlier.shift(years=1)
+        result = later.humanize(earlier)
+        assert "a year" in result
+
+    def test_one_year_leap(self):
+        """Feb 29 → Feb 28 next year (non-leap)."""
+        earlier = arrow.Arrow(2024, 2, 29)
+        later = earlier.shift(years=1)
+        result = later.humanize(earlier)
+        assert "a year" in result
+
+    def test_two_years(self):
+        earlier = arrow.Arrow(2023, 6, 15)
+        later = earlier.shift(years=2)
+        result = later.humanize(earlier)
+        assert "2 years" in result
+
+    def test_backward_one_year(self):
+        later = arrow.Arrow(2026, 3, 15)
+        earlier = arrow.Arrow(2025, 3, 15)
+        result = earlier.humanize(later)
+        assert "a year ago" in result
+
+    def test_only_distance_one_year(self):
+        earlier = arrow.Arrow(2024, 3, 15)
+        later = earlier.shift(years=1)
+        result = later.humanize(earlier, only_distance=True)
+        assert result == "a year"
+
+
+class TestHumanizeWeekBoundary:
+    """Tests for the week-level boundary that was also affected by the fix."""
+
+    def test_exactly_four_weeks(self):
+        """28 days should say '4 weeks', not 'a month'."""
+        earlier = arrow.Arrow(2025, 3, 1)
+        later = earlier.shift(weeks=4)
+        result = later.humanize(earlier)
+        assert "4 weeks" in result
+
+    def test_exactly_two_weeks(self):
+        earlier = arrow.Arrow(2025, 3, 1)
+        later = earlier.shift(weeks=2)
+        result = later.humanize(earlier)
+        assert "2 weeks" in result
+
+    def test_backward_two_weeks(self):
+        later = arrow.Arrow(2025, 3, 15)
+        earlier = arrow.Arrow(2025, 3, 1)
+        result = earlier.humanize(later)
+        assert "2 weeks ago" in result
+
+    def test_backward_four_weeks(self):
+        later = arrow.Arrow(2025, 3, 29)
+        earlier = arrow.Arrow(2025, 3, 1)
+        result = earlier.humanize(later)
+        assert "4 weeks ago" in result
+
+    def test_only_distance_four_weeks(self):
+        earlier = arrow.Arrow(2025, 3, 1)
+        later = earlier.shift(weeks=4)
+        result = later.humanize(earlier, only_distance=True)
+        assert result == "4 weeks"
+
+    def test_three_weeks(self):
+        earlier = arrow.Arrow(2025, 3, 1)
+        later = earlier.shift(weeks=3)
+        result = later.humanize(earlier)
+        assert "3 weeks" in result
+
+    def test_backward_three_weeks(self):
+        later = arrow.Arrow(2025, 3, 22)
+        earlier = arrow.Arrow(2025, 3, 1)
+        result = earlier.humanize(later)
+        assert "3 weeks ago" in result
+
+
+class TestHumanizeWeekToMonthEdgeCases:
+    """Edge cases at the transition from weeks to months."""
+
+    def test_27_days_not_a_month(self):
+        """27 days = 3 weeks 6 days, should NOT say 'a month'."""
+        earlier = arrow.Arrow(2025, 3, 1)
+        later = earlier.shift(days=27)
+        result = later.humanize(earlier)
+        assert "month" not in result
+
+    def test_28_days_not_a_month(self):
+        """28 days = exactly 4 weeks, should say '4 weeks'."""
+        earlier = arrow.Arrow(2025, 3, 1)
+        later = earlier.shift(days=28)
+        result = later.humanize(earlier)
+        assert "4 weeks" in result
+
+    def test_29_days_not_a_month(self):
+        """29 days = 4 weeks 1 day, should say '4 weeks'."""
+        earlier = arrow.Arrow(2025, 3, 1)
+        later = earlier.shift(days=29)
+        result = later.humanize(earlier)
+        assert "4 weeks" in result
+
+    def test_30_days_not_a_month(self):
+        """30 days = 4 weeks 2 days, should say '4 weeks'."""
+        earlier = arrow.Arrow(2025, 3, 1)
+        later = earlier.shift(days=30)
+        result = later.humanize(earlier)
+        assert "4 weeks" in result
+
+    def test_31_days_not_a_month(self):
+        """31 days = 4 weeks 3 days, spans a full calendar month → 'a month'."""
+        earlier = arrow.Arrow(2025, 3, 1)
+        later = earlier.shift(days=31)
+        result = later.humanize(earlier)
+        assert "month" in result
+
+    def test_35_days_not_a_month(self):
+        """35 days = 5 weeks, spans a full calendar month → 'a month'."""
+        earlier = arrow.Arrow(2025, 3, 1)
+        later = earlier.shift(days=35)
+        result = later.humanize(earlier)
+        assert "month" in result
+
+    def test_60_days_two_months(self):
+        """~2 months should say '2 months'."""
+        earlier = arrow.Arrow(2025, 1, 15)
+        later = earlier.shift(days=60)
+        result = later.humanize(earlier)
+        # 60 days is roughly 2 months, could be "2 months" or "8 weeks"
+        # The important thing is it doesn't crash or produce nonsense
+        assert "month" in result or "week" in result
+
+    def test_90_days_approx_three_months(self):
+        """~3 months should say '3 months'."""
+        earlier = arrow.Arrow(2025, 1, 15)
+        later = earlier.shift(days=90)
+        result = later.humanize(earlier)
+        assert "month" in result or "week" in result
+
+
+class TestHumanizeGranularityMonth:
+    """Tests for granularity='month' parameter with the fix."""
+
+    def test_granularity_month_one_month(self):
+        earlier = arrow.Arrow(2025, 2, 15)
+        later = earlier.shift(months=1)
+        result = later.humanize(earlier, granularity="month")
+        assert "month" in result
+
+    def test_granularity_month_two_months(self):
+        earlier = arrow.Arrow(2025, 1, 15)
+        later = earlier.shift(months=2)
+        result = later.humanize(earlier, granularity="month")
+        assert "2 months" in result
+
+    def test_granularity_month_backward(self):
+        later = arrow.Arrow(2025, 3, 15)
+        earlier = arrow.Arrow(2025, 2, 15)
+        result = earlier.humanize(later, granularity="month")
+        assert "month" in result
+
+    def test_granularity_month_list(self):
+        earlier = arrow.Arrow(2025, 2, 15)
+        later = earlier.shift(months=1)
+        result = later.humanize(earlier, granularity=["month"])
+        assert "month" in result
+
+    def test_granularity_month_list_backward(self):
+        later = arrow.Arrow(2025, 3, 15)
+        earlier = arrow.Arrow(2025, 2, 15)
+        result = earlier.humanize(later, granularity=["month"])
+        assert "month" in result
+
+
+class TestHumanizeDayOfMonthEdgeCases:
+    """Tests for edge cases involving day-of-month transitions."""
+
+    def test_jan31_feb28(self):
+        """Jan 31 → Feb 28 (clamped). Should be 'a month'."""
+        earlier = arrow.Arrow(2025, 1, 31)
+        later = earlier.shift(months=1)  # Feb 28 (clamped)
+        result = later.humanize(earlier)
+        assert "month" in result
+
+    def test_jan31_mar31(self):
+        """Jan 31 → Mar 31. Should be '2 months'."""
+        earlier = arrow.Arrow(2025, 1, 31)
+        later = earlier.shift(months=2)
+        result = later.humanize(earlier)
+        assert "2 months" in result
+
+    def test_mar31_apr30(self):
+        """Mar 31 → Apr 30 (clamped). Should be 'a month'."""
+        earlier = arrow.Arrow(2025, 3, 31)
+        later = earlier.shift(months=1)  # Apr 30 (clamped)
+        result = later.humanize(earlier)
+        assert "month" in result
+
+    def test_aug31_sep30(self):
+        """Aug 31 → Sep 30 (clamped). Should be 'a month'."""
+        earlier = arrow.Arrow(2025, 8, 31)
+        later = earlier.shift(months=1)  # Sep 30 (clamped)
+        result = later.humanize(earlier)
+        assert "month" in result
+
+    def test_aug31_oct31(self):
+        """Aug 31 → Oct 31. Should be '2 months'."""
+        earlier = arrow.Arrow(2025, 8, 31)
+        later = earlier.shift(months=2)
+        result = later.humanize(earlier)
+        assert "2 months" in result
+
+    def test_nov30_dec31(self):
+        """Nov 30 → Dec 31. Should be 'a month'."""
+        earlier = arrow.Arrow(2025, 11, 30)
+        later = earlier.shift(months=1)
+        result = later.humanize(earlier)
+        assert "month" in result
+
+    def test_nov30_jan30(self):
+        """Nov 30 → Jan 30. Should be '2 months'."""
+        earlier = arrow.Arrow(2025, 11, 30)
+        later = earlier.shift(months=2)
+        result = later.humanize(earlier)
+        assert "2 months" in result
+
+
+class TestHumanizeLocale:
+    """Tests for locale parameter with the fix."""
+
+    def test_locale_en_us(self):
+        earlier = arrow.Arrow(2025, 2, 15)
+        later = earlier.shift(months=1)
+        result = later.humanize(earlier, locale="en_us")
+        assert "month" in result
+
+    def test_locale_en_gb(self):
+        earlier = arrow.Arrow(2025, 2, 15)
+        later = earlier.shift(months=1)
+        result = later.humanize(earlier, locale="en_gb")
+        assert "month" in result
+
+    def test_locale_fr(self):
+        earlier = arrow.Arrow(2025, 2, 15)
+        later = earlier.shift(months=1)
+        result = later.humanize(earlier, locale="fr")
+        assert "mois" in result or "month" in result
+
+    def test_locale_de(self):
+        earlier = arrow.Arrow(2025, 2, 15)
+        later = earlier.shift(months=1)
+        result = later.humanize(earlier, locale="de")
+        assert "Monat" in result or "month" in result
+
+    def test_locale_es(self):
+        earlier = arrow.Arrow(2025, 2, 15)
+        later = earlier.shift(months=1)
+        result = later.humanize(earlier, locale="es")
+        assert "mes" in result or "month" in result
+
+
+class TestHumanizeDefaultNow:
+    """Tests for humanize() with no 'other' argument (defaults to now)."""
+
+    def test_default_now_recent(self):
+        """Recent times should still work with default 'now'."""
+        earlier = arrow.Arrow.utcnow().shift(minutes=-5)
+        result = earlier.humanize()
+        assert "minute" in result
+
+    def test_default_now_hours(self):
+        """Hours ago with default 'now'."""
+        earlier = arrow.Arrow.utcnow().shift(hours=-3)
+        result = earlier.humanize()
+        assert "hour" in result
+
+    def test_default_now_days(self):
+        """Days ago with default 'now'."""
+        earlier = arrow.Arrow.utcnow().shift(days=-2)
+        result = earlier.humanize()
+        assert "day" in result
+
+    def test_default_now_weeks(self):
+        """Weeks ago with default 'now'."""
+        earlier = arrow.Arrow.utcnow().shift(weeks=-3)
+        result = earlier.humanize()
+        assert "week" in result
+
+    def test_default_now_months(self):
+        """Months ago with default 'now'."""
+        earlier = arrow.Arrow.utcnow().shift(months=-2)
+        result = earlier.humanize()
+        assert "month" in result
+

@@ -1211,8 +1211,8 @@ class Arrow:
                 elif diff < self._SECS_PER_MONTH:
                     # Use calendar-aware month comparison instead of fixed seconds
                     delta = relativedelta(self._datetime, dt)
-                    month_diff = delta.years * 12 + delta.months
-                    week_diff = delta.days // 7
+                    month_diff = abs(delta.years * 12 + delta.months)
+                    week_diff = abs(delta.days) // 7
                     if month_diff >= 1:
                         return locale.describe("month", sign, only_distance=only_distance)
                     weeks = sign * max(week_diff, 2)
@@ -1221,7 +1221,7 @@ class Arrow:
                 elif diff < self._SECS_PER_MONTH * 2:
                     # Use calendar-aware month comparison
                     delta = relativedelta(self._datetime, dt)
-                    month_diff = delta.years * 12 + delta.months
+                    month_diff = abs(delta.years * 12 + delta.months)
                     if month_diff >= 2:
                         months = sign * max(month_diff, 2)
                         return locale.describe(
@@ -1261,7 +1261,10 @@ class Arrow:
                 elif granularity == "week":
                     delta = sign * delta_second / self._SECS_PER_WEEK
                 elif granularity == "month":
-                    delta = sign * delta_second / self._SECS_PER_MONTH
+                    rd = relativedelta(self._datetime, dt)
+                    month_diff = rd.years * 12 + rd.months
+                    day_frac = rd.days / 30.0
+                    delta = month_diff + day_frac
                 elif granularity == "quarter":
                     delta = sign * delta_second / self._SECS_PER_QUARTER
                 elif granularity == "year":
