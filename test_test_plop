@@ -102,3 +102,18 @@ Example:
 '4 weeks ago'  # WRONG — should be "in a month" (30 days < 30.5, so falls into weeks)
 The fixed 30.5-day average doesn't account for actual calendar month boundaries. A 30-day span like March→April is misclassified as weeks when it should be months.
 + implémentation de test_humanize.py
+
+12h15
+fix the code in the humanize function to account for these test failures
+The fix is to replace the fixed _SECS_PER_MONTH threshold with actual calendar-aware month comparison. Instead of comparing raw seconds to a 30.5-day constant, use relativedelta to compute the actual month difference.
+
+
+12h18
+implement this fix to take into account varying months lenght
+Good, relativedelta is already imported. Now let me implement the fix:
++ code dans arrow.py
+
+
+12h22
+use pytest on the tests/test_humanize.py file to check for issues
+a lancé les tests -> passed !

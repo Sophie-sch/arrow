@@ -1209,10 +1209,24 @@ class Arrow:
                 elif diff < self._SECS_PER_WEEK * 2:
                     return locale.describe("week", sign, only_distance=only_distance)
                 elif diff < self._SECS_PER_MONTH:
-                    weeks = sign * max(delta_second // self._SECS_PER_WEEK, 2)
+                    # Use calendar-aware month comparison instead of fixed seconds
+                    delta = relativedelta(self._datetime, dt)
+                    month_diff = delta.years * 12 + delta.months
+                    week_diff = delta.days // 7
+                    if month_diff >= 1:
+                        return locale.describe("month", sign, only_distance=only_distance)
+                    weeks = sign * max(week_diff, 2)
                     return locale.describe("weeks", weeks, only_distance=only_distance)
 
                 elif diff < self._SECS_PER_MONTH * 2:
+                    # Use calendar-aware month comparison
+                    delta = relativedelta(self._datetime, dt)
+                    month_diff = delta.years * 12 + delta.months
+                    if month_diff >= 2:
+                        months = sign * max(month_diff, 2)
+                        return locale.describe(
+                            "months", months, only_distance=only_distance
+                        )
                     return locale.describe("month", sign, only_distance=only_distance)
                 elif diff < self._SECS_PER_YEAR:
                     # TODO revisit for humanization during leap years
